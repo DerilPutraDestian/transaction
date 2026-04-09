@@ -8,11 +8,12 @@ import (
 )
 
 type Customer struct {
-	ID        string    `gorm:"primaryKey;type:char(36)" json:"id"`
-	Name      string    `gorm:"column:customer_name" json:"name"`
-	Email     string    `gorm:"column:email" json:"email"`
-	Phone     string    `gorm:"column:phone" json:"phone"`
-	CreatedAt time.Time `gorm:"column:created_at" json:"created_at"`
+	ID         string    `gorm:"primaryKey;type:char(36)" json:"id"`
+	Name       string    `gorm:"column:customer_name" json:"name"`
+	Intitution *string   `gorm:"column:intitution" json:"intitution"`
+	Email      string    `gorm:"column:email" json:"email"`
+	Phone      string    `gorm:"column:phone" json:"phone"`
+	CreatedAt  time.Time `gorm:"column:created_at" json:"created_at"`
 }
 
 func (c *Customer) BeforeCreate(tx *gorm.DB) (err error) {

@@ -16,8 +16,9 @@ func Migrate(db *gorm.DB) error {
 		&models.User{},
 		&models.Category{},
 		&models.Product{},
-		&models.ProductHistory{},
 		&models.Customer{},
+		&models.Invoice{},
+		&models.InvoiceItem{},
 	)
 
 	if err != nil {
@@ -36,11 +37,12 @@ func DropAll(db *gorm.DB) error {
 	db.Exec("SET FOREIGN_KEY_CHECKS = 0")
 
 	err := db.Migrator().DropTable(
-		&models.ProductHistory{},
 		&models.Product{},
 		&models.Category{},
 		&models.User{},
 		&models.Customer{},
+		&models.Invoice{},
+		&models.InvoiceItem{},
 	)
 
 	if err != nil {

@@ -18,8 +18,7 @@ func SetupRoutes(app *fiber.App, db *gorm.DB) {
 
 	// Asset & Category
 	productRepo := repository.NewProductRepository(db)
-	historyRepo := repository.NewHistoryRepository(db)
-	productSvc := service.NewProductService(productRepo, historyRepo)
+	productSvc := service.NewProductService(productRepo)
 	productHandler := handlers.NewProductHandler(productSvc)
 
 	catRepo := repository.NewCategoryRepository(db)
@@ -31,10 +30,13 @@ func SetupRoutes(app *fiber.App, db *gorm.DB) {
 	custSvc := service.NewCustomerService(custRepo)
 	custHandler := handlers.NewCustomerHandler(custSvc)
 
-	// Loan & Maintenance
-	tranRepo := repository.NewTransactionRepository(db)
-	tranSvc := service.NewTransactionService(tranRepo)
-	transactionHandler := handlers.NewTransactionHandler(tranSvc)
+	invoiceRepo := repository.NewInvoiceRepository(db)
+	invoiceSvc := service.NewInvoiceService(invoiceRepo)
+	invoiceHandler := handlers.NewInvoiceHandler(invoiceSvc)
+
+	invoiceItemRepo := repository.NewInvoiceItemRepository(db)
+	invoiceItemSvc := service.NewInvoiceItemService(invoiceItemRepo)
+	invoiceItemHandler := handlers.NewInvoiceItemHandler(invoiceItemSvc)
 
 	api := app.Group("/api")
 	api.Post("/login", userHandler.Login)
@@ -60,10 +62,18 @@ func SetupRoutes(app *fiber.App, db *gorm.DB) {
 	categories.Put("/:id", catHandler.Update)
 	categories.Delete("/:id", catHandler.Delete)
 
-	// --- LOANS (PEMINJAMAN) ---
-	transactions := api.Group("/transactions")
-	transactions.Get("/", transactionHandler.Index)
-	transactions.Post("/", transactionHandler.Store)
-	transactions.Put("/:id", transactionHandler.Update) // Digunakan untuk Return Asset
+	// --- INVOICES ---
+	invoices := api.Group("/invoices")
+	invoices.Get("/", invoiceHandler.Index)
+	invoices.Get("/:id", invoiceHandler.Show)
+	invoices.Post("/", invoiceHandler.Store)
+	invoices.Put("/:id", invoiceHandler.Update)
+
+	// --- INVOICE ITEMS ---
+	invoiceItems := api.Group("/invoice-items")
+	invoiceItems.Get("/", invoiceItemHandler.Index)
+	invoiceItems.Get("/:id", invoiceItemHandler.Show)
+	invoiceItems.Post("/", invoiceItemHandler.Store)
+	invoiceItems.Put("/:id", invoiceItemHandler.Update)
 
 }

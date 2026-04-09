@@ -14,14 +14,14 @@ func NewProductRepository(db *gorm.DB) *ProductRepository {
 	return &ProductRepository{db: db}
 }
 
-func (r *ProductRepository) GetAll(productCode, search string, limit, offset int) ([]models.Product, int64, error) {
+func (r *ProductRepository) GetAll(id, search string, limit, offset int) ([]models.Product, int64, error) {
 	var products []models.Product
 	var count int64
 
 	query := r.db.Model(&models.Product{})
 
-	if productCode != "" {
-		query = query.Where("product_code = ?", productCode)
+	if id != "" {
+		query = query.Where("id = ?", id)
 	}
 
 	err := query.Count(&count).

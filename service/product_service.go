@@ -6,15 +6,13 @@ import (
 )
 
 type ProductService struct {
-	repo        *repository.ProductRepository
-	historyRepo repository.HistoryRepository
+	repo *repository.ProductRepository
 }
 
 // 🔥 FIX: tambahkan historyRepo di constructor
-func NewProductService(repo *repository.ProductRepository, historyRepo repository.HistoryRepository) *ProductService {
+func NewProductService(repo *repository.ProductRepository) *ProductService {
 	return &ProductService{
-		repo:        repo,
-		historyRepo: historyRepo,
+		repo: repo,
 	}
 }
 
@@ -39,13 +37,6 @@ func (s *ProductService) CreateProduct(product *models.Product) error {
 		return err
 	}
 
-	// 🔥 baru simpan history (SETELAH berhasil)
-	_ = s.historyRepo.Create(&models.ProductHistory{
-		ProductID:   product.ID,
-		Action:      "create",
-		Description: "Product created",
-	})
-
 	return nil
 }
 
@@ -56,13 +47,6 @@ func (s *ProductService) UpdateProduct(product *models.Product) error {
 	if err := s.repo.Update(product); err != nil {
 		return err
 	}
-
-	// 🔥 history
-	_ = s.historyRepo.Create(&models.ProductHistory{
-		ProductID:   product.ID,
-		Action:      "update",
-		Description: "Product updated",
-	})
 
 	return nil
 }
@@ -75,13 +59,6 @@ func (s *ProductService) DeleteProduct(product *models.Product) error {
 	if err := s.repo.Delete(product); err != nil {
 		return err
 	}
-
-	// 🔥 history
-	_ = s.historyRepo.Create(&models.ProductHistory{
-		ProductID:   product.ID,
-		Action:      "delete",
-		Description: "Product deleted",
-	})
 
 	return nil
 }

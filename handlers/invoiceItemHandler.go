@@ -8,20 +8,20 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-type TransactionHandler struct {
-	service *service.TransactionService
+type InvoiceItemHandler struct {
+	service *service.InvoiceItemService
 }
 
-func NewTransactionHandler(s *service.TransactionService) *TransactionHandler {
-	return &TransactionHandler{service: s}
+func NewInvoiceItemHandler(s *service.InvoiceItemService) *InvoiceItemHandler {
+	return &InvoiceItemHandler{service: s}
 }
 
 // Index mengambil daftar transaksi dengan paginasi
-func (h *TransactionHandler) Index(c *fiber.Ctx) error {
+func (h *InvoiceItemHandler) Index(c *fiber.Ctx) error {
 	limit, _ := strconv.Atoi(c.Query("limit", "10"))
 	offset, _ := strconv.Atoi(c.Query("offset", "0"))
 
-	data, total, err := h.service.ListTransactions("", "", limit, offset)
+	data, total, err := h.service.ListInvoiceItems("", "", limit, offset)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"status":  "error",
@@ -35,10 +35,24 @@ func (h *TransactionHandler) Index(c *fiber.Ctx) error {
 		"data":   data,
 	})
 }
+func (h *InvoiceItemHandler) Show(c *fiber.Ctx) error {
+	id := c.Params("id")
+	data, err := h.service.GetInvoiceItemByID(id)
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Data tidak ditemukan",
+		})
+	}
+	return c.JSON(fiber.Map{
+		"status": "success",
+		"data":   data,
+	})
+}
 
 // Store membuat transaksi baru
-func (h *TransactionHandler) Store(c *fiber.Ctx) error {
-	req := new(models.Transaction) // Gunakan model yang sesuai, bukan Product
+func (h *InvoiceItemHandler) Store(c *fiber.Ctx) error {
+	req := new(models.InvoiceItem) // Gunakan model yang sesuai, bukan Product
 
 	if err := c.BodyParser(req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -47,7 +61,7 @@ func (h *TransactionHandler) Store(c *fiber.Ctx) error {
 		})
 	}
 
-	if err := h.service.CreateTransaction(req); err != nil {
+	if err := h.service.CreateInvoiceItem(req); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"status":  "error",
 			"message": err.Error(),
@@ -61,39 +75,39 @@ func (h *TransactionHandler) Store(c *fiber.Ctx) error {
 }
 
 // Update memperbarui data transaksi yang ada
-func (h *TransactionHandler) Update(c *fiber.Ctx) error {
+func (h *InvoiceItemHandler) Update(c *fiber.Ctx) error {
 	id := c.Params("id")
 
-	// 1. Parsing body langsung ke struct sementara
-	var req models.Transaction
+	var req models.InvoiceItem
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"status":  "error",
 			"message": "Input tidak valid",
 		})
 	}
-
-	// 2. Ambil data lama
-	existing, err := h.service.GetTransactionByID(id)
+	existing, err := h.service.GetInvoiceItemByID(id)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"status":  "error",
-			"message": "Transaksi tidak ditemukan",
+			"message": "Invoice item tidak ditemukan",
 		})
 	}
 
+	existing.InvoiceID = req.InvoiceID
 	existing.ProductID = req.ProductID
-	existing.CustomerID = req.CustomerID
+	existing.Qty = req.Qty
+	existing.UnitPrice = req.UnitPrice
 
-	if err := h.service.UpdateTransaction(existing); err != nil {
+	if err := h.service.UpdateInvoiceItem(existing); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"status":  "error",
-			"message": "Gagal memperbarui transaksi",
+			"message": "Gagal memperbarui data",
 		})
 	}
+	updatedData, _ := h.service.GetInvoiceItemByID(id)
 
 	return c.JSON(fiber.Map{
 		"status": "success",
-		"data":   existing,
+		"data":   updatedData,
 	})
 }

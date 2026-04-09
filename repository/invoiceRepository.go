@@ -6,19 +6,19 @@ import (
 	"gorm.io/gorm"
 )
 
-type TransactionRepository struct {
+type InvoiceRepository struct {
 	db *gorm.DB
 }
 
-func NewTransactionRepository(db *gorm.DB) *TransactionRepository {
-	return &TransactionRepository{db: db}
+func NewInvoiceRepository(db *gorm.DB) *InvoiceRepository {
+	return &InvoiceRepository{db: db}
 }
 
-func (r *TransactionRepository) GetAll(assetLoanCode, search string, limit, offset int) ([]models.Transaction, int64, error) {
-	var assetsLoan []models.Transaction
+func (r *InvoiceRepository) GetAll(assetLoanCode, search string, limit, offset int) ([]models.Invoice, int64, error) {
+	var invoices []models.Invoice
 	var count int64
 
-	query := r.db.Model(&models.Transaction{})
+	query := r.db.Model(&models.Invoice{})
 
 	if assetLoanCode != "" {
 		query = query.Where("asset_loan_code = ?", assetLoanCode)
@@ -35,13 +35,13 @@ func (r *TransactionRepository) GetAll(assetLoanCode, search string, limit, offs
 		Preload("Customer").         // Load data Customer yang meminjam
 		Limit(limit).
 		Offset(offset).
-		Find(&assetsLoan).Error
+		Find(&invoices).Error
 
-	return assetsLoan, count, err
+	return invoices, count, err
 }
 
-func (r *TransactionRepository) GetByID(id string) (*models.Transaction, error) {
-	var data models.Transaction
+func (r *InvoiceRepository) GetByID(id string) (*models.Invoice, error) {
+	var data models.Invoice
 	// Di sini juga sebaiknya tambahkan Preload("Product.Category") agar data lengkap saat ambil detail
 	err := r.db.Preload("Product").Preload("Product.Category").Preload("Customer").First(&data, "id = ?", id).Error
 	if err != nil {
@@ -50,10 +50,10 @@ func (r *TransactionRepository) GetByID(id string) (*models.Transaction, error) 
 	return &data, nil
 }
 
-func (r *TransactionRepository) Create(transaction *models.Transaction) error {
-	return r.db.Omit("Product", "Customer").Create(transaction).Error
+func (r *InvoiceRepository) Create(invoice *models.Invoice) error {
+	return r.db.Omit("Product", "Customer").Create(invoice).Error
 }
 
-func (r *TransactionRepository) Update(transaction *models.Transaction) error {
-	return r.db.Save(transaction).Error
+func (r *InvoiceRepository) Update(invoice *models.Invoice) error {
+	return r.db.Save(invoice).Error
 }

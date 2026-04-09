@@ -52,8 +52,6 @@ func (h *ProductHandler) Store(c *fiber.Ctx) error {
 	if err := c.BodyParser(&product); err != nil {
 		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Invalid request body"})
 	}
-
-	// ID akan di-generate oleh BeforeCreate di model
 	if err := h.service.CreateProduct(&product); err != nil {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": err.Error()})
 	}
