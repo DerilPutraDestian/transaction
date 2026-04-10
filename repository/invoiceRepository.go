@@ -14,25 +14,33 @@ func NewInvoiceRepository(db *gorm.DB) *InvoiceRepository {
 	return &InvoiceRepository{db: db}
 }
 
-func (r *InvoiceRepository) GetAll(assetLoanCode, search string, limit, offset int) ([]models.Invoice, int64, error) {
+// GetAll sekarang menggunakan customerID dan status sebagai filter
+func (r *InvoiceRepository) GetAll(customerID, status string, limit, offset int) ([]models.Invoice, int64, error) {
 	var invoices []models.Invoice
 	var count int64
 
 	query := r.db.Model(&models.Invoice{})
 
-	if assetLoanCode != "" {
-		query = query.Where("asset_loan_code = ?", assetLoanCode)
+	// Filter berdasarkan CustomerID jika disediakan
+	if customerID != "" {
+		query = query.Where("customer_id = ?", customerID)
 	}
 
-	// Gunakan search jika ada (opsional, tergantung kebutuhanmu)
-	if search != "" {
-		// Contoh: mencari berdasarkan nama asset melalui join atau search langsung jika ada fieldnya
+	// Filter berdasarkan Status jika disediakan
+	if status != "" {
+		query = query.Where("status = ?", status)
 	}
 
-	err := query.Count(&count).
-		Preload("Product").          // Load data Product
-		Preload("Product.Category"). // Load data Category MILIK Product (Nested Preload)
-		Preload("Customer").         // Load data Customer yang meminjam
+	// Hitung total record untuk pagination
+	query.Count(&count)
+
+	err := query.
+		// Pilih kolom yang ada di struct Invoice (Huruf besar)
+		Select("id", "customer_id", "total_amount", "status", "date", "created_at", "updated_at").
+		// Preload Customer secara spesifik agar ringan
+		Preload("Customer", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id", "name") // Pastikan field 'name' ada di tabel customers
+		}).
 		Limit(limit).
 		Offset(offset).
 		Find(&invoices).Error
@@ -42,8 +50,8 @@ func (r *InvoiceRepository) GetAll(assetLoanCode, search string, limit, offset i
 
 func (r *InvoiceRepository) GetByID(id string) (*models.Invoice, error) {
 	var data models.Invoice
-	// Di sini juga sebaiknya tambahkan Preload("Product.Category") agar data lengkap saat ambil detail
-	err := r.db.Preload("Product").Preload("Product.Category").Preload("Customer").First(&data, "id = ?", id).Error
+	// Preload Customer lengkap untuk detail
+	err := r.db.Preload("Customer").First(&data, "id = ?", id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -51,9 +59,11 @@ func (r *InvoiceRepository) GetByID(id string) (*models.Invoice, error) {
 }
 
 func (r *InvoiceRepository) Create(invoice *models.Invoice) error {
-	return r.db.Omit("Product", "Customer").Create(invoice).Error
+	// Omit "Customer" agar tidak mencoba insert/update ke tabel customers
+	return r.db.Omit("Customer").Create(invoice).Error
 }
 
 func (r *InvoiceRepository) Update(invoice *models.Invoice) error {
-	return r.db.Save(invoice).Error
+	// Omit "Customer" agar data referensi tidak ikut terupdate secara tidak sengaja
+	return r.db.Omit("Customer").Save(invoice).Error
 }
